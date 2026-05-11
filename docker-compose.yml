@@ -5,27 +5,21 @@ services:
       - "6379:6379"
 
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.web
     ports:
       - "8000:8000"
     environment:
       - REDIS_URL=redis://redis:6379
-      - RESULTS_DIR=/data/results
-    volumes:
-      - results:/data/results
     depends_on:
       - redis
 
   worker:
-    build: .
-    command: rq worker patches --url redis://redis:6379
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
     environment:
       - REDIS_URL=redis://redis:6379
-      - RESULTS_DIR=/data/results
-    volumes:
-      - results:/data/results
     depends_on:
       - redis
-
-volumes:
-  results:
