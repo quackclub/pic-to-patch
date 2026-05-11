@@ -44,6 +44,7 @@ func main() {
 	mux.HandleFunc("GET /jobs/{job_id}", handleGetJob)
 	mux.HandleFunc("GET /jobs/{job_id}/result", handleGetResult)
 	mux.HandleFunc("GET /health", handleHealth)
+	mux.HandleFunc("GET /", handleRoot)
 
 	log.Println("listening on :8000")
 	log.Fatal(http.ListenAndServe(":8000", mux))
@@ -159,6 +160,10 @@ func handleGetResult(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/png")
 	w.Header().Set("Content-Disposition", fmt.Sprintf(`inline; filename="%s.png"`, jobID))
 	w.Write(data)
+}
+
+func handleRoot(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "https://github.com/maxwofford/pic-to-patch", http.StatusFound)
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
