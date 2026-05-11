@@ -1,0 +1,15 @@
+attempts/
+tmp/
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.env
+.claude/
+.mcp.json
+
+# old ruby/imagemagick attempt
+Gemfile
+Gemfile.lock
+bin/
+lib/

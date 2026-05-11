@@ -1,0 +1,130 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: p2p-results
+spec:
+  accessModes: [ReadWriteMany]
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: p2p-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: p2p-api
+  template:
+    metadata:
+      labels:
+        app: p2p-api
+    spec:
+      containers:
+        - name: api
+          image: pic-to-patch:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: REDIS_URL
+              value: redis://p2p-redis:6379
+            - name: RESULTS_DIR
+              value: /data/results
+          volumeMounts:
+            - name: results
+              mountPath: /data/results
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 10
+      volumes:
+        - name: results
+          persistentVolumeClaim:
+            claimName: p2p-results
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: p2p-worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: p2p-worker
+  template:
+    metadata:
+      labels:
+        app: p2p-worker
+    spec:
+      containers:
+        - name: worker
+          image: pic-to-patch:latest
+          command: ["rq", "worker", "patches", "--url", "$(REDIS_URL)"]
+          env:
+            - name: REDIS_URL
+              value: redis://p2p-redis:6379
+            - name: RESULTS_DIR
+              value: /data/results
+          volumeMounts:
+            - name: results
+              mountPath: /data/results
+          resources:
+            requests:
+              memory: 512Mi
+              cpu: 500m
+            limits:
+              memory: 2Gi
+              cpu: 2000m
+      volumes:
+        - name: results
+          persistentVolumeClaim:
+            claimName: p2p-results
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: p2p-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: p2p-redis
+  template:
+    metadata:
+      labels:
+        app: p2p-redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          ports:
+            - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: p2p-redis
+spec:
+  selector:
+    app: p2p-redis
+  ports:
+    - port: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: p2p-api
+spec:
+  selector:
+    app: p2p-api
+  ports:
+    - port: 80
+      targetPort: 8000
