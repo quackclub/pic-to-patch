@@ -8,6 +8,10 @@ __pycache__/
 .claude/
 .mcp.json
 
+# Go binaries
+worker/pic-to-patch-worker
+/worker/worker
+
 # old ruby/imagemagick attempt
 Gemfile
 Gemfile.lock
